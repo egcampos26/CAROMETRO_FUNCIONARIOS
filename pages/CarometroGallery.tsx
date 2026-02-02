@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { Funcionario, Shift, AuthUser } from '../../types';
+import { Funcionario, AuthUser, Shift } from '../types';
 import { Search, UserCircle2, User } from 'lucide-react';
 
 interface CarometroGalleryProps {

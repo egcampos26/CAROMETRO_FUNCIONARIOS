@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, ChevronLeft, ShieldCheck, User } from 'lucide-react';
-import { AuthUser } from '../../types';
+import { AuthUser } from '../types';
 
 interface LayoutProps {
   title: React.ReactNode;

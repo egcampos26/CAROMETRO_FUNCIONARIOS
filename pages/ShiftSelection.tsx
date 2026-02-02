@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { Shift, AuthUser } from '../../types';
+import { Shift, AuthUser } from '../types';
 import { UserCircle2, ShieldCheck, GraduationCap } from 'lucide-react';
 
 interface ShiftSelectionProps {

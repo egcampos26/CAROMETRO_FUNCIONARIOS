@@ -2,7 +2,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { Funcionario, Occurrence, AuthUser } from '../../types';
+import { Funcionario, Occurrence, AuthUser } from '../types';
 import { Edit2, ChevronRight, CreditCard, Briefcase, Activity, Landmark, User, Building } from 'lucide-react';
 
 interface FuncionarioDetailProps {

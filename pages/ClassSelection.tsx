@@ -2,8 +2,8 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { GRADES, SERVIDORES_ROLES, TERCEIRIZADOS_ROLES, CONTRATOS_ROLES } from '../../constants';
-import { AuthUser, Shift } from '../../types';
+import { GRADES, SERVIDORES_ROLES, TERCEIRIZADOS_ROLES, CONTRATOS_ROLES } from '../constants';
+import { Shift, AuthUser } from '../types';
 
 interface ClassSelectionProps {
   user: AuthUser;

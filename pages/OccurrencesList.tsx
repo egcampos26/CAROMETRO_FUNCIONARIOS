@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { Occurrence, Funcionario, AuthUser } from '../../types';
+import { Occurrence, Funcionario, AuthUser } from '../types';
 import { Search, User, Clock, FileText, LayoutList, Plus, Calendar, X } from 'lucide-react';
 
 interface OccurrencesListProps {

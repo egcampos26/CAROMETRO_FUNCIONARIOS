@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { Funcionario, Occurrence, AuthUser } from '../../types';
+import { Funcionario, Occurrence, AuthUser } from '../types';
 import { UserCheck, Calendar, Search, Users, X, CheckCircle2 } from 'lucide-react';
 
 interface OccurrenceAddProps {

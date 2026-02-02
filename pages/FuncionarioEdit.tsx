@@ -2,7 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { Funcionario, AuthUser, Shift } from '../../types';
+import { GRADES, MOCK_FUNCIONARIOS } from '../constants';
+import { Funcionario, AuthUser } from '../types';
 import { Save, Camera, Image as ImageIcon, UserCircle2, X, ShieldAlert } from 'lucide-react';
 import { convertToWebP } from '../lib/imageUtils';
 
