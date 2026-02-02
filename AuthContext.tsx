@@ -41,14 +41,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setLoading(false);
     }, []);
 
-    const login = async (emailOrName: string, senha: string) => {
+    const login = async (identifier: string, senha: string) => {
         try {
-            // Query our custom LOGIN table with proper column escaping
+            // Query our custom LOGIN table with lowercase columns matching database
             const { data, error } = await supabase
                 .from('LOGIN')
-                .select('id_func, nome_func, "E-mail", Categoria, VINCULO, funcionario_id')
-                .or(`"E-mail".eq.${emailOrName},nome_func.ilike.%${emailOrName}%`)
-                .eq('Senha', senha)
+                .select('id_func, email, senha, usuario')
+                .or(`email.eq.${identifier},usuario.eq.${identifier}`)
+                .eq('senha', senha)
                 .maybeSingle();
 
             if (error || !data) {
@@ -56,25 +56,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 return { error: 'Credenciais inválidas' };
             }
 
-            // Now fetch the full funcionario details using funcionario_id
+            // Now fetch the full funcionario details using id_func
             let funcionarioDetails = null;
-            if (data.funcionario_id) {
-                const { data: funcData } = await supabase
-                    .from('FUNCIONARIOS')
-                    .select('*')
-                    .eq('id_func', data.funcionario_id)
-                    .single();
+            const { data: funcData, error: funcError } = await supabase
+                .from('FUNCIONARIOS')
+                .select('*')
+                .eq('id_func', data.id_func)
+                .single();
 
+            if (funcError) {
+                console.error('Error fetching funcionario details:', funcError);
+            } else {
                 funcionarioDetails = funcData;
             }
 
             // Map to UserSession
-            const role = data.Categoria === 'GESTAO' ? 'Admin' : 'Teacher';
+            // We'll determine the role based on funcionario categoria if available, otherwise default
+            const role = (funcionarioDetails?.categoria === 'GESTAO') ? 'Admin' : 'Teacher';
 
             const sessionUser: UserSession = {
                 id_func: data.id_func.toString(),
-                nome_func: data.nome_func,
-                email: data['E-mail'],
+                nome_func: funcionarioDetails?.nome_func || data.usuario || 'Usuário',
+                email: data.email,
                 role: role,
                 details: funcionarioDetails as unknown as Funcionario
             };

@@ -21,7 +21,7 @@ export interface Funcionario {
   id_func: string;
   rf: string;
   vc: string;
-  empres: string;
+  empresa: string;
   status: string; // Was 'Ativo' | 'Inativo' ... might need to be loose string for now or mapped
   vinculo: string;
   categoria: string;

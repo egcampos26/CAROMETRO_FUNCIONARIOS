@@ -13,15 +13,12 @@ import OccurrenceDetail from './pages/OccurrenceDetail';
 import { Funcionario, Occurrence, AuthUser } from './types';
 import { supabase } from './supabase';
 
-// Mock user for standalone testing (Portal will provide user when integrated)
-const MOCK_USER: AuthUser = {
-  id: 'portal-user',
-  name: 'Usuário Portal',
-  role: 'Admin',
-  email: 'portal@sme.prefeitura.sp.gov.br'
-};
+import { useAuth } from './AuthContext';
+import Login from './pages/Login';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 const App: React.FC = () => {
+  const { user, loading } = useAuth();
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [occurrences, setOccurrences] = useState<Occurrence[]>(() => {
     const saved = localStorage.getItem('carometro_occurrences');
@@ -158,39 +155,86 @@ const App: React.FC = () => {
   const dummyToggle = () => { };
   const dummySetUser = () => { };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b5998]"></div>
+      </div>
+    );
+  }
+
+  // Map session user to legacy AuthUser type for components
+  const legacyUser: AuthUser | null = user ? {
+    id: user.id_func,
+    name: user.nome_func,
+    email: user.email,
+    role: user.role as 'Admin' | 'Teacher' | 'Funcionario'
+  } : null;
+
   return (
     <HashRouter>
       <div className="min-h-screen bg-gray-50 flex flex-col w-full overflow-x-hidden">
         <div className="flex-1 flex flex-col w-full max-w-7xl mx-auto bg-white shadow-sm md:my-4 md:rounded-xl overflow-hidden relative">
           <Routes>
+            <Route path="/login" element={
+              user ? <Navigate to="/" replace /> : <Login />
+            } />
+
             <Route path="/" element={
-              <ShiftSelection user={MOCK_USER} onToggleRole={dummyToggle} onSetUser={dummySetUser} testUsers={[]} />
+              <ProtectedRoute>
+                <ShiftSelection user={legacyUser!} onToggleRole={dummyToggle} onSetUser={dummySetUser} testUsers={[]} />
+              </ProtectedRoute>
             } />
+
             <Route path="/classes/:shift" element={
-              <ClassSelection user={MOCK_USER} onToggleRole={dummyToggle} />
+              <ProtectedRoute>
+                <ClassSelection user={legacyUser!} onToggleRole={dummyToggle} />
+              </ProtectedRoute>
             } />
+
             <Route path="/carometro/:shift/:grade" element={
-              <CarometroGallery officials={funcionarios} user={MOCK_USER} onToggleRole={dummyToggle} />
+              <ProtectedRoute>
+                <CarometroGallery officials={funcionarios} user={legacyUser!} onToggleRole={dummyToggle} />
+              </ProtectedRoute>
             } />
+
             <Route path="/funcionario/:id" element={
-              <FuncionarioDetail officials={funcionarios} occurrences={occurrences} user={MOCK_USER} onToggleRole={dummyToggle} />
+              <ProtectedRoute>
+                <FuncionarioDetail officials={funcionarios} occurrences={occurrences} user={legacyUser!} onToggleRole={dummyToggle} />
+              </ProtectedRoute>
             } />
+
             <Route path="/edit-funcionario/:id" element={
-              <FuncionarioEdit officials={funcionarios} onUpdate={updateFuncionario} user={MOCK_USER} onToggleRole={dummyToggle} />
+              <ProtectedRoute>
+                <FuncionarioEdit officials={funcionarios} onUpdate={updateFuncionario} user={legacyUser!} onToggleRole={dummyToggle} />
+              </ProtectedRoute>
             } />
+
             <Route path="/occurrences" element={
-              <OccurrencesList officials={funcionarios} occurrences={occurrences} user={MOCK_USER} onToggleRole={dummyToggle} />
+              <ProtectedRoute>
+                <OccurrencesList officials={funcionarios} occurrences={occurrences} user={legacyUser!} onToggleRole={dummyToggle} />
+              </ProtectedRoute>
             } />
+
             <Route path="/occurrence/:id" element={
-              <OccurrenceDetail officials={funcionarios} occurrences={occurrences} user={MOCK_USER} onDelete={deleteOccurrence} />
+              <ProtectedRoute>
+                <OccurrenceDetail officials={funcionarios} occurrences={occurrences} user={legacyUser!} onDelete={deleteOccurrence} />
+              </ProtectedRoute>
             } />
+
             <Route path="/add-occurrence/:funcionarioId" element={
-              <OccurrenceAdd officials={funcionarios} onAdd={addOccurrence} user={MOCK_USER} />
+              <ProtectedRoute>
+                <OccurrenceAdd officials={funcionarios} onAdd={addOccurrence} user={legacyUser!} />
+              </ProtectedRoute>
             } />
+
             <Route path="/add-multi-occurrence" element={
-              <OccurrenceAddMulti officials={funcionarios} onAdd={addOccurrence} user={MOCK_USER} />
+              <ProtectedRoute>
+                <OccurrenceAddMulti officials={funcionarios} onAdd={addOccurrence} user={legacyUser!} />
+              </ProtectedRoute>
             } />
-            <Route path="*" element={<Navigate to="/" />} />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </div>

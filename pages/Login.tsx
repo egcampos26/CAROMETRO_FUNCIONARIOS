@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '../../AuthContext';
+import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Lock, User, AlertCircle, Loader2 } from 'lucide-react';
-import { INSTITUTIONAL_BLUE } from '../../constants';
+import { INSTITUTIONAL_BLUE } from '../constants';
 
 const Login: React.FC = () => {
     const { login } = useAuth();
