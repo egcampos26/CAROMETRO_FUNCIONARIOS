@@ -33,12 +33,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check local storage for persisted session (simple implementation)
-        const storedUser = localStorage.getItem('carometro_user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-        setLoading(false);
+        const initializeAuth = async () => {
+            // Priority 1: Check URL for external session (MFE mode)
+            const params = new URLSearchParams(window.location.search);
+            const externalUserId = params.get('user_id');
+
+            if (externalUserId) {
+                console.log('Detected external user_id, attempting auto-login...');
+                try {
+                    const { data, error } = await supabase
+                        .from('LOGIN')
+                        .select('id_func, email, usuario')
+                        .eq('id_func', externalUserId)
+                        .maybeSingle();
+
+                    if (data && !error) {
+                        const { data: funcData } = await supabase
+                            .from('FUNCIONARIOS')
+                            .select('*')
+                            .eq('id_func', data.id_func)
+                            .single();
+
+                        const role = (funcData?.categoria === 'GESTAO') ? 'Admin' : 'Teacher';
+                        const sessionUser: UserSession = {
+                            id_func: data.id_func.toString(),
+                            nome_func: funcData?.nome_func || data.usuario || 'Usuário',
+                            email: data.email,
+                            role: role,
+                            details: funcData as unknown as Funcionario
+                        };
+                        setUser(sessionUser);
+                        localStorage.setItem('carometro_user', JSON.stringify(sessionUser));
+                        setLoading(false);
+                        return;
+                    }
+                } catch (err) {
+                    console.error('External login failed:', err);
+                }
+            }
+
+            // Priority 2: Check local storage for persisted session
+            const storedUser = localStorage.getItem('carometro_user');
+            if (storedUser) {
+                setUser(JSON.parse(storedUser));
+            }
+            setLoading(false);
+        };
+
+        initializeAuth();
     }, []);
 
     const login = async (identifier: string, senha: string) => {
