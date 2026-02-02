@@ -1,0 +1,7 @@
+{
+  "name": "Carômetro dos funcionários",
+  "description": "Um aplicativo móvel para gestão de RH escolar, permitindo a visualização de carômetros, registro de ocorrências e edição de dados de funcionários com captura de fotos.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
