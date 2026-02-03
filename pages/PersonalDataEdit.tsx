@@ -67,15 +67,27 @@ const PersonalDataEdit: React.FC<PersonalDataEditProps> = ({ officials, onUpdate
         // 'cep_func' is integer in DB, so we should arguably strip non-digits.
         // However, if we send "12345-678" to an int4 column, it might fail.
         // Let's strip it just in case.
-        const payload = {
-            ...formData,
-            cep_func: formData.cep_func ? formData.cep_func.replace(/\D/g, '') : null
-        };
+        try {
+            const payload = {
+                ...formData,
+                cep_func: formData.cep_func ? formData.cep_func.replace(/\D/g, '') : null
+            };
 
-        await onUpdate(payload as Funcionario);
-        setLoading(false);
-        navigate(`/personal-data/${id}`);
+            await onUpdate(payload as Funcionario);
+            navigate(`/personal-data/${id}`);
+        } catch (error) {
+            console.error("Erro ao salvar:", error);
+            // Alert is usually handled in onUpdate/App.tsx, but just in case
+        } finally {
+            if (mounted) setLoading(false);
+        }
     };
+
+    // Safety check for unmount
+    let mounted = true;
+    useEffect(() => {
+        return () => { mounted = false };
+    }, []);
 
     return (
         <Layout
