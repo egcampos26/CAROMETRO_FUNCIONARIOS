@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ShiftSelection from './pages/ShiftSelection';
 import ClassSelection from './pages/ClassSelection';
 import CarometroGallery from './pages/CarometroGallery';
@@ -184,7 +184,7 @@ const App: React.FC = () => {
   } : null;
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <div className="min-h-screen bg-gray-50 flex flex-col w-full overflow-x-hidden">
         <div className="flex-1 flex flex-col w-full max-w-7xl mx-auto bg-white shadow-sm md:my-4 md:rounded-xl overflow-hidden relative">
           <Routes>
@@ -262,7 +262,7 @@ const App: React.FC = () => {
           </Routes>
         </div>
       </div>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 
