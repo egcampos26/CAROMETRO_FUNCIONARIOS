@@ -43,28 +43,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const externalUserId = params.get('user_id');
             console.log('Parsed user_id:', externalUserId);
 
-            // DEBUG OVERLAY
-            const debugLog = document.createElement('div');
-            debugLog.style.position = 'fixed';
-            debugLog.style.top = '0';
-            debugLog.style.left = '0';
-            debugLog.style.width = '100%';
-            debugLog.style.background = 'rgba(0,0,0,0.8)';
-            debugLog.style.color = '#00ff00';
-            debugLog.style.padding = '10px';
-            debugLog.style.zIndex = '99999';
-            debugLog.style.fontSize = '12px';
-            debugLog.style.fontFamily = 'monospace';
-            debugLog.style.pointerEvents = 'none';
-            debugLog.innerHTML = `
-                <p>URL: ${window.location.href}</p>
-                <p>Search: ${window.location.search}</p>
-                <p>Hash: ${window.location.hash}</p>
-                <p>User ID Param: ${externalUserId || 'null'}</p>
-                <p>LocalStorage User: ${localStorage.getItem('carometro_user')}</p>
-            `;
-            document.body.appendChild(debugLog);
-
             if (externalUserId) {
                 console.log('Detected external user_id, attempting auto-login...');
                 try {
@@ -75,12 +53,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         .maybeSingle();
 
                     if (error) {
-                        debugLog.innerHTML += `<p style="color:red">Supabase Error: ${error.message}</p>`;
                         console.error('Supabase error:', error);
                     }
 
                     if (data && !error) {
-                        debugLog.innerHTML += `<p style="color:cyan">User Found: ${data.email}</p>`;
+                        console.log(`User Found: ${data.email}`);
                         const { data: funcData } = await supabase
                             .from('FUNCIONARIOS')
                             .select('*')
@@ -98,17 +75,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         setUser(sessionUser);
                         localStorage.setItem('carometro_user', JSON.stringify(sessionUser));
                         setLoading(false);
-                        debugLog.remove(); // Remove overlay on success
                         return;
                     } else {
-                        debugLog.innerHTML += `<p style="color:orange">User Not Found in LOGIN table</p>`;
+                        console.warn('User Not Found in LOGIN table');
                     }
                 } catch (err: any) {
                     console.error('External login failed:', err);
-                    debugLog.innerHTML += `<p style="color:red">Exception: ${err.message}</p>`;
+                    console.error('External login failed:', err);
                 }
             } else {
-                debugLog.innerHTML += `<p>No external user_id found. Checking local storage...</p>`;
+                console.log('No external user_id found. Checking local storage...');
             }
 
             // Priority 2: Check local storage for persisted session
