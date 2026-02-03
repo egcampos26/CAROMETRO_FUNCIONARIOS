@@ -44,7 +44,7 @@ const Layout: React.FC<LayoutProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-white overflow-hidden max-w-7xl mx-auto shadow-2xl sm:border-x sm:border-gray-200">
+    <div className="flex flex-col h-screen w-full bg-white overflow-hidden shadow-2xl">
       <header className="bg-[#3b5998] h-16 sm:h-20 flex items-center justify-between px-2 shrink-0 text-white shadow-md z-30 relative border-b border-white/10">
 
         {/* Lado Esquerdo: Home + Perfil do Usuário (Condicional) */}
