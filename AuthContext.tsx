@@ -36,33 +36,65 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     useEffect(() => {
         const initializeAuth = async () => {
+            // Helper function for persistent diagnostic logging
+            const logDebug = (key: string, value: any) => {
+                const timestamp = new Date().toISOString();
+                const logEntry = { timestamp, value };
+                console.log(`[CAROMETRO DEBUG ${timestamp}] ${key}:`, value);
+                try {
+                    sessionStorage.setItem(`carometro_debug_${key}`, JSON.stringify(logEntry));
+                } catch (e) {
+                    console.error('Failed to write to sessionStorage:', e);
+                }
+            };
+
             // Priority 1: Check URL for external session (MFE mode)
-            // Debugging: Log the full URL and search params
-            console.log('Current URL:', window.location.href);
+            logDebug('full_url', window.location.href);
+            logDebug('referrer', document.referrer);
+            logDebug('in_iframe', window.self !== window.top);
+
             const params = new URLSearchParams(window.location.search);
             const externalUserId = params.get('user_id');
-            console.log('Parsed user_id:', externalUserId);
+            logDebug('url_params', Object.fromEntries(params.entries()));
+            logDebug('user_id_param', externalUserId);
 
             if (externalUserId) {
-                console.log('Detected external user_id, attempting auto-login...');
+                logDebug('auth_step', 'starting_external_login');
                 try {
+                    const startTime = Date.now();
                     const { data, error } = await supabase
                         .from('LOGIN')
                         .select('id_func, email, usuario')
                         .eq('id_func', externalUserId)
                         .maybeSingle();
 
+                    const queryTime = Date.now() - startTime;
+                    logDebug('supabase_query_time_ms', queryTime);
+
                     if (error) {
-                        console.error('Supabase error:', error);
+                        logDebug('supabase_error', {
+                            message: error.message,
+                            details: error.details,
+                            hint: error.hint,
+                            code: error.code
+                        });
                     }
 
                     if (data && !error) {
-                        console.log(`User Found: ${data.email}`);
-                        const { data: funcData } = await supabase
+                        logDebug('user_found', { email: data.email, id_func: data.id_func });
+
+                        const { data: funcData, error: funcError } = await supabase
                             .from('FUNCIONARIOS')
                             .select('*')
                             .eq('id_func', data.id_func)
                             .single();
+
+                        if (funcError) {
+                            logDebug('funcionario_error', {
+                                message: funcError.message,
+                                code: funcError.code
+                            });
+                        }
 
                         const role = (funcData?.categoria === 'GESTAO') ? 'Admin' : 'Teacher';
                         const sessionUser: UserSession = {
@@ -74,25 +106,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         };
                         setUser(sessionUser);
                         localStorage.setItem('carometro_user', JSON.stringify(sessionUser));
+                        logDebug('auth_success', { nome: sessionUser.nome_func, role: sessionUser.role });
                         setLoading(false);
                         return;
                     } else {
-                        console.warn('User Not Found in LOGIN table');
+                        logDebug('auth_step', 'user_not_found_in_db');
                     }
                 } catch (err: any) {
-                    console.error('External login failed:', err);
-                    console.error('External login failed:', err);
+                    logDebug('external_login_exception', {
+                        message: err?.message || 'Unknown error',
+                        stack: err?.stack || 'No stack trace'
+                    });
                 }
             } else {
-                console.log('No external user_id found. Checking local storage...');
+                logDebug('auth_step', 'no_external_user_id');
             }
 
             // Priority 2: Check local storage for persisted session
             const storedUser = localStorage.getItem('carometro_user');
             if (storedUser) {
+                logDebug('auth_step', 'using_stored_session');
                 setUser(JSON.parse(storedUser));
+            } else {
+                logDebug('auth_step', 'no_stored_session');
             }
             setLoading(false);
+            logDebug('auth_complete', { hasUser: !!storedUser || !!externalUserId });
         };
 
         initializeAuth();

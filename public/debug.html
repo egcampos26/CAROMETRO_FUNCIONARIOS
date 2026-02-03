@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Carômetro dos Funcionários</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: #f3f4f6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #3b5998;
+            margin-bottom: 24px;
+            font-size: 24px;
+        }
+
+        h2 {
+            color: #1f2937;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            font-size: 18px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
+        }
+
+        .info-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .info-item {
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 3px solid #3b5998;
+        }
+
+        .label {
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .value {
+            color: #111827;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        .success {
+            border-left-color: #10b981;
+            background: #ecfdf5;
+        }
+
+        .error {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .warning {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #3b5998;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 16px;
+            margin-right: 8px;
+        }
+
+        button:hover {
+            background: #2d4373;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #e5e7eb;
+            border-top-color: #3b5998;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        pre {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico - Carômetro dos Funcionários</h1>
+
+        <h2>📍 Informações de Contexto</h2>
+        <div class="info-grid" id="context-info"></div>
+
+        <h2>🔑 Parâmetros da URL</h2>
+        <div class="info-grid" id="url-params"></div>
+
+        <h2>💾 Logs de Debug (sessionStorage)</h2>
+        <div class="info-grid" id="debug-logs"></div>
+
+        <h2>🗄️ Session Storage Completo</h2>
+        <button onclick="testSupabase()">Testar Conexão Supabase</button>
+        <button onclick="clearStorage()">Limpar Storage</button>
+        <button onclick="location.reload()">Recarregar</button>
+        <div id="supabase-test" style="margin-top: 16px;"></div>
+        <pre id="full-storage"></pre>
+    </div>
+
+    <script>
+        // Display context information
+        function displayContext() {
+            const contextInfo = document.getElementById('context-info');
+            const info = [
+                { label: 'URL Completa', value: window.location.href },
+                { label: 'Protocolo', value: window.location.protocol },
+                { label: 'Host', value: window.location.host },
+                { label: 'Pathname', value: window.location.pathname },
+                { label: 'Search', value: window.location.search || '(vazio)' },
+                { label: 'Referrer', value: document.referrer || '(nenhum)' },
+                { label: 'Em iframe?', value: window.self !== window.top ? 'SIM ⚠️' : 'NÃO' },
+                { label: 'User Agent', value: navigator.userAgent },
+                { label: 'Timestamp', value: new Date().toISOString() }
+            ];
+
+            contextInfo.innerHTML = info.map(item => `
+                <div class="info-item ${item.value.includes('SIM') ? 'warning' : ''}">
+                    <div class="label">${item.label}</div>
+                    <div class="value">${item.value}</div>
+                </div>
+            `).join('');
+        }
+
+        // Display URL parameters
+        function displayUrlParams() {
+            const paramsDiv = document.getElementById('url-params');
+            const params = new URLSearchParams(window.location.search);
+            const entries = Array.from(params.entries());
+
+            if (entries.length === 0) {
+                paramsDiv.innerHTML = '<div class="info-item error"><div class="label">⚠️ Nenhum parâmetro encontrado</div><div class="value">O Portal deveria estar passando user_id na URL!</div></div>';
+                return;
+            }
+
+            paramsDiv.innerHTML = entries.map(([key, value]) => `
+                <div class="info-item ${key === 'user_id' ? 'success' : ''}">
+                    <div class="label">${key}</div>
+                    <div class="value">${value}</div>
+                </div>
+            `).join('');
+        }
+
+        // Display debug logs from sessionStorage
+        function displayDebugLogs() {
+            const logsDiv = document.getElementById('debug-logs');
+            const debugKeys = [];
+
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                if (key && key.startsWith('carometro_debug_')) {
+                    debugKeys.push(key);
+                }
+            }
+
+            if (debugKeys.length === 0) {
+                logsDiv.innerHTML = '<div class="info-item warning"><div class="label">Nenhum log encontrado</div><div class="value">Execute a aplicação principal para gerar logs.</div></div>';
+                return;
+            }
+
+            logsDiv.innerHTML = debugKeys.map(key => {
+                const data = JSON.parse(sessionStorage.getItem(key));
+                const shortKey = key.replace('carometro_debug_', '');
+                return `
+                    <div class="info-item">
+                        <div class="label">${shortKey} <span style="color: #9ca3af; font-size: 10px;">${data.timestamp}</span></div>
+                        <div class="value">${JSON.stringify(data.value, null, 2)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Display full storage
+        function displayFullStorage() {
+            const fullStorage = document.getElementById('full-storage');
+            const storage = {
+                sessionStorage: {},
+                localStorage: {}
+            };
+
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                try {
+                    storage.sessionStorage[key] = JSON.parse(sessionStorage.getItem(key));
+                } catch {
+                    storage.sessionStorage[key] = sessionStorage.getItem(key);
+                }
+            }
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                try {
+                    storage.localStorage[key] = JSON.parse(localStorage.getItem(key));
+                } catch {
+                    storage.localStorage[key] = localStorage.getItem(key);
+                }
+            }
+
+            fullStorage.textContent = JSON.stringify(storage, null, 2);
+        }
+
+        // Test Supabase connection
+        async function testSupabase() {
+            const testDiv = document.getElementById('supabase-test');
+            testDiv.innerHTML = '<div class="info-item"><div class="label">Testando conexão...</div><div class="value">Aguarde<span class="spinner"></span></div></div>';
+
+            try {
+                const supabaseUrl = 'https://qeilkmtwttuaeutkzsuz.supabase.co';
+                const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlaWxrbXR3dHR1YWV1dGt6c3V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1NTg2NjYsImV4cCI6MjA4NTEzNDY2Nn0.ddf8TNqHh_mpm0_mXLxLT35RHaQ6LAvrWOmbsvODeRE';
+
+                const response = await fetch(`${supabaseUrl}/rest/v1/`, {
+                    headers: {
+                        'apikey': anonKey,
+                        'Authorization': `Bearer ${anonKey}`
+                    }
+                });
+
+                if (response.ok) {
+                    testDiv.innerHTML = '<div class="info-item success"><div class="label">✅ Conexão com Supabase</div><div class="value">SUCESSO - API está acessível</div></div>';
+                } else {
+                    testDiv.innerHTML = `<div class="info-item error"><div class="label">❌ Erro na Conexão</div><div class="value">Status: ${response.status} - ${response.statusText}</div></div>`;
+                }
+            } catch (error) {
+                testDiv.innerHTML = `<div class="info-item error"><div class="label">❌ Erro na Conexão</div><div class="value">${error.message}</div></div>`;
+            }
+        }
+
+        // Clear storage
+        function clearStorage() {
+            if (confirm('Limpar todo o sessionStorage e localStorage?')) {
+                sessionStorage.clear();
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // Initialize
+        displayContext();
+        displayUrlParams();
+        displayDebugLogs();
+        displayFullStorage();
+
+        // Auto-refresh debug logs every 2 seconds
+        setInterval(() => {
+            displayDebugLogs();
+            displayFullStorage();
+        }, 2000);
+    </script>
+</body>
+
+</html>

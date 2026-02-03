@@ -169,8 +169,15 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b5998]"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-sm">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b5998] mx-auto mb-4"></div>
+          <h2 className="text-lg font-bold text-gray-800 mb-2">Carregando Carômetro</h2>
+          <p className="text-sm text-gray-600">Conectando ao servidor e autenticando...</p>
+          <p className="text-xs text-gray-400 mt-4">
+            Se continuar carregando por muito tempo, verifique sua conexão ou acesse <a href="/debug.html" className="text-[#3b5998] underline" target="_blank">diagnóstico</a>
+          </p>
+        </div>
       </div>
     );
   }

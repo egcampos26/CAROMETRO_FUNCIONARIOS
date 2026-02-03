@@ -1,28 +1,65 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Allow this app to be embedded in iframes from the same origin or parent portal -->
+    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self' https://*.vercel.app">
     <title>Carômetro dos funcionários - EMEF Tarsila do Amaral</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom scrollbar and base styles for a mobile app feel */
-        html, body, #root {
+        html,
+        body,
+        #root {
             width: 100%;
             height: 100%;
             margin: 0;
             padding: 0;
         }
+
         body {
             background-color: #f3f4f6;
             -webkit-tap-highlight-color: transparent;
         }
+
         .safe-area-bottom {
             padding-bottom: env(safe-area-inset-bottom);
         }
+
+        /* Loading indicator */
+        #loading-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #3b5998;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            margin-top: 16px;
+            color: #6b7280;
+            font-size: 14px;
+        }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
@@ -34,8 +71,31 @@
 }
 </script>
 </head>
+
 <body class="overflow-x-hidden">
-    <div id="root"></div>
-<script type="module" src="/index.tsx"></script>
+    <div id="root">
+        <!-- Loading indicator shown before React mounts -->
+        <div id="loading-indicator">
+            <div class="spinner"></div>
+            <div class="loading-text">Carregando Carômetro...</div>
+        </div>
+    </div>
+    <script type="module" src="/index.tsx"></script>
+    <script>
+        // Error handler for script loading failures
+        window.addEventListener('error', function (e) {
+            if (e.target.tagName === 'SCRIPT') {
+                document.getElementById('root').innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 20px; text-align: center; font-family: system-ui;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                        <h1 style="color: #dc2626; margin-bottom: 8px;">Erro ao Carregar</h1>
+                        <p style="color: #6b7280;">Não foi possível carregar o aplicativo. Verifique sua conexão e tente novamente.</p>
+                        <button onclick="location.reload()" style="margin-top: 16px; padding: 8px 16px; background: #3b5998; color: white; border: none; border-radius: 8px; cursor: pointer;">Recarregar</button>
+                    </div>
+                `;
+            }
+        }, true);
+    </script>
 </body>
+
 </html>
