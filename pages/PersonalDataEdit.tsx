@@ -59,9 +59,17 @@ const PersonalDataEdit: React.FC<PersonalDataEditProps> = ({ officials, onUpdate
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.id_func) return;
+
+        // Ensure id_func is present (fallback to URL param id)
+        const funcId = formData.id_func || id;
+        if (!funcId) {
+            console.error("ID do funcionário não encontrado");
+            alert("Erro: ID do funcionário não identificado.");
+            return;
+        }
 
         setLoading(true);
+        console.log("Iniciando salvamento...", { funcId, formData });
 
         // Ensure we handle data types suitable for DB if needed, but Supabase JS handles most casts.
         // 'cep_func' is integer in DB, so we should arguably strip non-digits.
@@ -70,14 +78,17 @@ const PersonalDataEdit: React.FC<PersonalDataEditProps> = ({ officials, onUpdate
         try {
             const payload = {
                 ...formData,
-                cep_func: formData.cep_func ? formData.cep_func.replace(/\D/g, '') : null
+                id_func: funcId, // Ensure ID is set
+                cep_func: formData.cep_func ? String(formData.cep_func).replace(/\D/g, '') : null
             };
 
+            console.log("Payload para atualização:", payload);
             await onUpdate(payload as Funcionario);
+            console.log("Atualização concluída. Navegando para:", `/personal-data/${id}`);
             navigate(`/personal-data/${id}`);
         } catch (error) {
             console.error("Erro ao salvar:", error);
-            // Alert is usually handled in onUpdate/App.tsx, but just in case
+            alert("Erro ao salvar alterações. Verifique o console.");
         } finally {
             if (mounted) setLoading(false);
         }
