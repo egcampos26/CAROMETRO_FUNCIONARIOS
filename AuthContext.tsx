@@ -2,6 +2,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from './supabase';
 import { Funcionario } from './types';
+import {
+    createPortalMessageListener,
+    sendAuthSuccessToPortal,
+    sendAuthFailureToPortal,
+    sendMFEReadyToPortal,
+    logIframeContext,
+    isInIframe
+} from './lib/postMessageUtils';
 
 // Defining our user type based on the View V_LOGIN_DETAILS or LOGIN table
 export interface UserSession {
@@ -48,18 +56,133 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
             };
 
-            // Priority 1: Check URL for external session (MFE mode)
+            // Log iframe context for debugging
+            logIframeContext();
+            logDebug('in_iframe', isInIframe());
             logDebug('full_url', window.location.href);
             logDebug('referrer', document.referrer);
-            logDebug('in_iframe', window.self !== window.top);
 
+            // Track if authentication has been completed
+            let authCompleted = false;
+
+            // Priority 1: Check for PostMessage from Portal (MFE mode)
+            if (isInIframe()) {
+                logDebug('auth_step', 'in_iframe_waiting_for_postmessage');
+
+                // Set up PostMessage listener
+                const handlePostMessage = createPortalMessageListener(
+                    async (authData) => {
+                        if (authCompleted) {
+                            logDebug('auth_step', 'postmessage_received_but_already_authenticated');
+                            return;
+                        }
+
+                        logDebug('auth_step', 'starting_postmessage_login');
+                        logDebug('postmessage_auth_data', {
+                            userId: authData.userId,
+                            userName: authData.userName,
+                            userEmail: authData.userEmail,
+                            userRole: authData.userRole
+                        });
+
+                        try {
+                            const startTime = Date.now();
+                            const { data, error } = await supabase
+                                .from('LOGIN')
+                                .select('id_func, email, usuario')
+                                .eq('id_func', authData.userId)
+                                .maybeSingle();
+
+                            const queryTime = Date.now() - startTime;
+                            logDebug('supabase_query_time_ms', queryTime);
+
+                            if (error) {
+                                logDebug('supabase_error', {
+                                    message: error.message,
+                                    details: error.details,
+                                    hint: error.hint,
+                                    code: error.code
+                                });
+                                sendAuthFailureToPortal('Database error: ' + error.message);
+                                return;
+                            }
+
+                            if (data && !error) {
+                                logDebug('user_found', { email: data.email, id_func: data.id_func });
+
+                                const { data: funcData, error: funcError } = await supabase
+                                    .from('FUNCIONARIOS')
+                                    .select('*')
+                                    .eq('id_func', data.id_func)
+                                    .single();
+
+                                if (funcError) {
+                                    logDebug('funcionario_error', {
+                                        message: funcError.message,
+                                        code: funcError.code
+                                    });
+                                }
+
+                                const role = (funcData?.categoria === 'GESTAO') ? 'Admin' : 'Teacher';
+                                const sessionUser: UserSession = {
+                                    id_func: data.id_func.toString(),
+                                    nome_func: funcData?.nome_func || authData.userName || data.usuario || 'Usuário',
+                                    email: data.email,
+                                    role: role,
+                                    details: funcData as unknown as Funcionario
+                                };
+                                setUser(sessionUser);
+                                localStorage.setItem('carometro_user', JSON.stringify(sessionUser));
+                                logDebug('auth_success', { nome: sessionUser.nome_func, role: sessionUser.role, source: 'postmessage' });
+
+                                // Send success confirmation to Portal
+                                sendAuthSuccessToPortal();
+                                authCompleted = true;
+                                setLoading(false);
+                                return;
+                            } else {
+                                logDebug('auth_step', 'user_not_found_in_db');
+                                sendAuthFailureToPortal('User not found in database');
+                            }
+                        } catch (err: any) {
+                            logDebug('postmessage_login_exception', {
+                                message: err?.message || 'Unknown error',
+                                stack: err?.stack || 'No stack trace'
+                            });
+                            sendAuthFailureToPortal('Exception during login: ' + (err?.message || 'Unknown'));
+                        }
+                    },
+                    () => {
+                        logDebug('portal_ready', 'Portal sent ready signal');
+                        // Send MFE ready signal back
+                        sendMFEReadyToPortal();
+                    }
+                );
+
+                window.addEventListener('message', handlePostMessage);
+
+                // Send MFE ready signal to Portal
+                sendMFEReadyToPortal();
+
+                // Wait a bit for PostMessage (give it 2 seconds)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // If still not authenticated, continue to fallback methods
+                if (authCompleted) {
+                    return; // Already authenticated via PostMessage
+                }
+
+                logDebug('auth_step', 'postmessage_timeout_trying_fallback');
+            }
+
+            // Priority 2: Check URL for external session (Fallback for legacy/direct access)
             const params = new URLSearchParams(window.location.search);
             const externalUserId = params.get('user_id');
             logDebug('url_params', Object.fromEntries(params.entries()));
             logDebug('user_id_param', externalUserId);
 
-            if (externalUserId) {
-                logDebug('auth_step', 'starting_external_login');
+            if (externalUserId && !authCompleted) {
+                logDebug('auth_step', 'starting_external_login_from_url');
                 try {
                     const startTime = Date.now();
                     const { data, error } = await supabase
@@ -106,7 +229,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         };
                         setUser(sessionUser);
                         localStorage.setItem('carometro_user', JSON.stringify(sessionUser));
-                        logDebug('auth_success', { nome: sessionUser.nome_func, role: sessionUser.role });
+                        logDebug('auth_success', { nome: sessionUser.nome_func, role: sessionUser.role, source: 'url_params' });
+                        authCompleted = true;
                         setLoading(false);
                         return;
                     } else {
@@ -122,16 +246,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 logDebug('auth_step', 'no_external_user_id');
             }
 
-            // Priority 2: Check local storage for persisted session
-            const storedUser = localStorage.getItem('carometro_user');
-            if (storedUser) {
-                logDebug('auth_step', 'using_stored_session');
-                setUser(JSON.parse(storedUser));
-            } else {
-                logDebug('auth_step', 'no_stored_session');
+            // Priority 3: Check local storage for persisted session
+            if (!authCompleted) {
+                const storedUser = localStorage.getItem('carometro_user');
+                if (storedUser) {
+                    logDebug('auth_step', 'using_stored_session');
+                    setUser(JSON.parse(storedUser));
+                } else {
+                    logDebug('auth_step', 'no_stored_session');
+                }
+                setLoading(false);
+                logDebug('auth_complete', { hasUser: !!storedUser, source: 'localstorage' });
             }
-            setLoading(false);
-            logDebug('auth_complete', { hasUser: !!storedUser || !!externalUserId });
         };
 
         initializeAuth();
