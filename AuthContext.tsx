@@ -124,25 +124,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = async (identifier: string, senha: string) => {
         try {
-            // Query our custom LOGIN table with lowercase columns matching database
+            // Use RPC to check credentials (handles hashed and plain text passwords)
             const { data, error } = await supabase
-                .from('LOGIN')
-                .select('id_func, email, senha, usuario')
-                .or(`email.eq.${identifier},usuario.eq.${identifier}`)
-                .eq('senha', senha)
-                .maybeSingle();
+                .rpc('check_user_login', {
+                    login_input: identifier,
+                    password_input: senha
+                });
 
-            if (error || !data) {
-                console.error('Login query error:', error);
+            if (error) {
+                console.error('Login RPC error:', error);
+                return { error: 'Erro ao conectar com o servidor' };
+            }
+
+            if (!data || data.length === 0) {
                 return { error: 'Credenciais inválidas' };
             }
 
-            // Now fetch the full funcionario details using id_func
+            const userData = data[0];
+
+            // Now fetch the full funcionario details using id_func for the session state
             let funcionarioDetails = null;
             const { data: funcData, error: funcError } = await supabase
                 .from('FUNCIONARIOS')
                 .select('*')
-                .eq('id_func', data.id_func)
+                .eq('id_func', userData.id_func)
                 .single();
 
             if (funcError) {
@@ -152,13 +157,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             // Map to UserSession
-            // We'll determine the role based on funcionario categoria if available, otherwise default
+            // We'll determine the role based on funcionario categoria if available
             const role = (funcionarioDetails?.categoria === 'GESTAO') ? 'Admin' : 'Teacher';
 
             const sessionUser: UserSession = {
-                id_func: data.id_func.toString(),
-                nome_func: funcionarioDetails?.nome_func || data.usuario || 'Usuário',
-                email: data.email,
+                id_func: userData.id_func.toString(),
+                nome_func: funcionarioDetails?.nome_func || userData.usuario || 'Usuário',
+                email: userData.email,
                 role: role,
                 details: funcionarioDetails as unknown as Funcionario
             };
@@ -168,7 +173,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return { error: null };
         } catch (err) {
             console.error('Login error:', err);
-            return { error: 'Erro ao conectar com o servidor' };
+            return { error: 'Erro inesperado' };
         }
     };
 
