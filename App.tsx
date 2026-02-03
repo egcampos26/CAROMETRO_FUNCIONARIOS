@@ -129,7 +129,17 @@ const App: React.FC = () => {
           subfuncao: updatedFuncionario.subfuncao,
           qpe: updatedFuncionario.qpe,
           status: updatedFuncionario.status,
-          foto_func: photoUrl
+          foto_func: photoUrl,
+          cpf_func: updatedFuncionario.cpf_func,
+          rg_func: updatedFuncionario.rg_func,
+          data_nascimento_func: updatedFuncionario.data_nascimento_func,
+          cep_func: updatedFuncionario.cep_func,
+          logradouro_func: updatedFuncionario.logradouro_func,
+          "n°_func": updatedFuncionario["n°_func"],
+          compl_func: updatedFuncionario.compl_func,
+          bairro_func: updatedFuncionario.bairro_func,
+          cidade_func: updatedFuncionario.cidade_func,
+          estado_func: updatedFuncionario.estado_func
         })
         .eq('id_func', updatedFuncionario.id_func);
 
