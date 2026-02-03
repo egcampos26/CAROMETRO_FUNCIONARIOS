@@ -6,7 +6,7 @@ import { LayoutDashboard, Lock, User, AlertCircle, Loader2 } from 'lucide-react'
 import { INSTITUTIONAL_BLUE } from '../constants';
 
 const Login: React.FC = () => {
-    const { login } = useAuth();
+    const { login, loginAsTestUser } = useAuth();
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -98,6 +98,24 @@ const Login: React.FC = () => {
                             {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Entrar'}
                         </button>
                     </form>
+                    {import.meta.env.DEV && (
+                        <div className="mt-4 pt-4 border-t border-dashed border-gray-200">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (loginAsTestUser) {
+                                        loginAsTestUser();
+                                    } else {
+                                        console.error('loginAsTestUser not available');
+                                    }
+                                }}
+                                className="w-full bg-orange-100 text-orange-600 py-3 rounded-xl font-bold text-xs uppercase hover:bg-orange-200 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                                Entrar como Teste (DEV)
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

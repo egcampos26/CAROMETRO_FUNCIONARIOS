@@ -17,6 +17,7 @@ interface AuthContextType {
     loading: boolean;
     login: (email: string, senha: string) => Promise<{ error: string | null }>;
     logout: () => void;
+    loginAsTestUser?: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
     loading: true,
     login: async () => ({ error: 'Not implemented' }),
     logout: () => { },
+    loginAsTestUser: () => { },
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -175,8 +177,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem('carometro_user');
     };
 
+    const loginAsTestUser = () => {
+        const testUser: UserSession = {
+            id_func: 'test-user-id',
+            nome_func: 'Usuário Teste',
+            email: 'teste@exemplo.com',
+            role: 'Admin',
+            details: {
+                id_func: 'test-user-id',
+                nome_func: 'Usuário Teste',
+                rf: '0000000',
+                vc: '1',
+                empresa: 'PREFEITURA',
+                status: 'ATIVO',
+                vinculo: 'TESTE',
+                categoria: 'GESTAO',
+                cargo_base: 'Cargo Base',
+                cargo: 'Cargo Teste',
+                funcao: 'Função Teste',
+                subfuncao: '',
+                qpe: '00',
+                jornada: 'COMPLETA',
+                inicio_exercicio: '2024-01-01',
+                inicio_ue: '2024-01-01',
+                ue_lotacao: '000000',
+                ue_exercicio: '000000',
+                ue_acumulo: '',
+                email_sme: 'teste@sme.sp.gov.br',
+                email_edu: 'teste@edu.sme.sp.gov.br',
+                foto_func: ''
+            } as Funcionario
+        };
+        setUser(testUser);
+        localStorage.setItem('carometro_user', JSON.stringify(testUser));
+        console.log('Logged in as Test User');
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, logout, loginAsTestUser }}>
             {children}
         </AuthContext.Provider>
     );
