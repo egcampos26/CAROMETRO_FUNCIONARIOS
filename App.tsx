@@ -16,6 +16,7 @@ import { supabase } from './supabase';
 import { useAuth } from './AuthContext';
 import Login from './pages/Login';
 import PersonalData from './pages/PersonalData';
+import PersonalDataEdit from './pages/PersonalDataEdit';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 const App: React.FC = () => {
@@ -213,7 +214,13 @@ const App: React.FC = () => {
 
             <Route path="/personal-data/:id" element={
               <ProtectedRoute>
-                <PersonalData officials={funcionarios} onUpdate={updateFuncionario} user={legacyUser!} onToggleRole={dummyToggle} />
+                <PersonalData officials={funcionarios} user={legacyUser!} onToggleRole={dummyToggle} />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/personal-data/:id/edit" element={
+              <ProtectedRoute>
+                <PersonalDataEdit officials={funcionarios} onUpdate={updateFuncionario} user={legacyUser!} onToggleRole={dummyToggle} />
               </ProtectedRoute>
             } />
 
