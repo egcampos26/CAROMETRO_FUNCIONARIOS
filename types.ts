@@ -40,6 +40,16 @@ export interface Funcionario {
   email_sme: string;
   email_edu: string;
   foto_func: string;
+  cpf_func?: string;
+  rg_func?: string;
+  data_nascimento_func?: string;
+  cep_func?: string; // string mainly for masking, though DB might be int
+  logradouro_func?: string;
+  "n°_func"?: string; // Quoted because of special character
+  compl_func?: string;
+  bairro_func?: string;
+  cidade_func?: string;
+  estado_func?: string;
 }
 
 export interface AuthUser {

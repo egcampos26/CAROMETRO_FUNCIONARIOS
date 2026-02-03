@@ -180,40 +180,13 @@ const FuncionarioDetail: React.FC<FuncionarioDetailProps> = ({ officials, occurr
 
             <div className="pt-8">
               <div className="flex justify-between items-center mb-6">
-                <h4 className="text-[#3b5998] font-black uppercase text-sm tracking-widest">Histórico de Ocorrências</h4>
+                <h4 className="text-[#3b5998] font-black uppercase text-sm tracking-widest">Informações Pessoais</h4>
                 <button
-                  onClick={() => navigate(`/add-occurrence/${official.id_func}`)}
+                  onClick={() => navigate(`/personal-data/${official.id_func}`)}
                   className="bg-[#3b5998] text-white text-[10px] font-black px-6 py-2 rounded-full uppercase shadow-lg hover:bg-blue-700 transition-all"
                 >
-                  + Novo Registro
+                  Dados Pessoais
                 </button>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3">
-                {studentOccurrences.length > 0 ? (
-                  studentOccurrences.map(occ => (
-                    <div
-                      key={occ.id}
-                      className="bg-white p-4 rounded-2xl border-2 border-gray-50 hover:border-blue-100 shadow-sm flex justify-between items-center group cursor-pointer transition-all"
-                      onClick={() => navigate(`/occurrence/${occ.id}`)}
-                    >
-                      <div className="flex-1 min-w-0 pr-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`w-2 h-2 rounded-full ${occ.category === 'Comportamental' ? 'bg-red-500' : 'bg-blue-500'}`} />
-                          <p className="font-black text-gray-800 text-xs uppercase tracking-tighter truncate">{occ.title}</p>
-                        </div>
-                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
-                          {new Date(occ.date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300 group-hover:text-[#3b5998]" />
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100">
-                    <p className="text-gray-400 text-[9px] font-black uppercase">Sem registros técnicos</p>
-                  </div>
-                )}
               </div>
             </div>
           </div>
